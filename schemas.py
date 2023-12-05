@@ -14,7 +14,7 @@ basics_schema = t.StructType([
 
 
 akas_schema = t.StructType([
-    t.StructField("tconst", t.StringType(), False),
+    t.StructField("titleId", t.StringType(), False),
     t.StructField("ordering", t.IntegerType(), True),
     t.StructField("title", t.StringType(), True),
     t.StructField("region", t.StringType(), True),
@@ -57,7 +57,7 @@ principals_schema = t.StructType([
 
 
 name_schema = t.StructType([
-    t.StructField("tconst", t.StringType(), False),
+    t.StructField("nconst", t.StringType(), False),
     t.StructField("primaryName", t.StringType(), True),
     t.StructField("birthYear", t.IntegerType(), True),
     t.StructField("deathYear", t.IntegerType(), True),

@@ -55,7 +55,7 @@ def validate_name_data(df):
     return df
 
 
-def display__data_description(df, df_name: str):
+def display_data_description(df, df_name: str):
     print('\n', df_name)
     df.show()  # Display the first few rows of the DataFrame
     print("Schema:")
@@ -66,7 +66,7 @@ def display__data_description(df, df_name: str):
     print("Number of Columns:", len(df.columns))
     print("Number of Rows:", df.count())
 
-#
-# def display_numerical_statistics(df, columns: list[str]):
-#     print("\nStatistics for Numerical Columns:")
-#     df.describe(columns).show()
+
+def display_numerical_statistics(df, columns: list[str]):
+    print("\nStatistics for Numerical Columns:")
+    df.describe(columns).show()
