@@ -1,4 +1,5 @@
 import pyspark.sql.functions as F
+from pyspark.sql import Window
 
 from dataframes import name_df, basics_df
 
@@ -21,24 +22,28 @@ def get_people_who_starred_in_genres_in_year():
     return result
 
 
-def get_most_common_professions_by_years(year_begin: int, year_end: int):
+def get_most_common_professions_by_years():
+    window_spec = Window.partitionBy("primaryProfession").orderBy(F.desc("count"))
     result = (
-        name_df.filter((name_df['birthYear'] >= year_begin) & (name_df['birthYear'] < year_end))
-        .withColumn("primaryProfession", F.explode("primaryProfession"))  # Explode the array of professions
-        .groupBy('primaryProfession')
-        .agg(F.count('nconst').alias('count'))
-        .orderBy(F.desc('count'))
+        basics_df
+            .filter((F.col("birthYear") >= 1980) & (F.col("birthYear") < 1990))
+            .select("nconst", F.explode("primaryProfession").alias("primaryProfession"))
+            .groupBy("primaryProfession").agg(F.count("nconst").alias("count"))
+            .withColumn("rank", F.row_number().over(window_spec))
+            .filter("rank = 1")
+            .select("primaryProfession", "count")
     )
     result.show()
     return result
 
 
 def get_most_common_birth():
-    result = (name_df
-        .filter(F.col("birthYear").isNotNull())
-        .groupBy("birthYear")
-        .agg(F.count("*").alias("individualCount"))
-        .orderBy(F.desc("individualCount"))
+    window_spec = Window.partitionBy("birthYear")
+    result = (
+        name_df
+            .filter(F.col("birthYear").isNotNull())
+            .withColumn("numPeopleBorn", F.count("nconst").over(window_spec))
+            .orderBy(F.desc("numPeopleBorn"))
     )
     result.show()
     return result
@@ -49,9 +54,9 @@ def get_people_who_died_before_the_end_of_series():
         name_df
         .join(basics_df, F.expr("array_contains(knownForTitles, tconst)"), "inner")
         .filter((F.col("titleType") == "tvSeries") & (F.col("deathYear").isNotNull()) & (F.col("deathYear") < F.col("endYear")))
+        .orderBy(F.asc("deathYear"))
+        .limit(50)
     )
-
-    # Show the result
     result.show()
     return result
 
@@ -61,15 +66,16 @@ def get_people_who_died_before_18():
         name_df
         .filter((F.col("birthYear").isNotNull()) & (F.col("deathYear").isNotNull()) & (F.col("deathYear") - F.col("birthYear") < 18))
         .withColumn("deathAge", F.col("deathYear") - F.col("birthYear"))
+        .orderBy(F.desc("deathYear"))
+        .limit(25)
     )
-
-    # Show the result
     result.show()
     return result
 
 
 def get_average_runtime_of_series_by_decade():
-    result = (basics_df
+    result = (
+        basics_df
         .filter((F.col("titleType") == "tvseries") & (F.col("startYear").isNotNull()))
         .withColumn("decade", F.expr("floor(startYear/10)*10"))
         .groupBy("decade")
@@ -100,8 +106,8 @@ def run_name_df_queries():
     )
 
     # 2. Most common primary professions among people born in the 1980s
-    result_q2 = get_most_common_professions_by_years(1980, 1990)
-    result_q2.write.mode("overwrite").csv('data/most_common_professions_ among_1980s_people.csv', header=True)
+    result_q2 = get_most_common_professions_by_years()
+    result_q2.write.mode("overwrite").csv('data/most_common_professions_among_1980s_people.csv', header=True)
 
     # 3. Most common birth years among individuals
     result_q3 = get_most_common_birth()
