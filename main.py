@@ -1,7 +1,7 @@
 import pyspark.sql.types as t
 from pyspark.sql import SparkSession
 
-from queries import run_name_df_queries
+from queries import run_name_df_queries, run_akas_n_rating_queries
 from session import spark_session, stop_session
 
 
@@ -21,5 +21,6 @@ def create_test_data(session: SparkSession):
 
 if __name__ == '__main__':
     # create_test_data(spark_session)
-    run_name_df_queries()
+    # run_name_df_queries()
+    run_akas_n_rating_queries()
     stop_session()
