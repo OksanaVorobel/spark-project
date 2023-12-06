@@ -1,6 +1,6 @@
 import pyspark.sql.functions as F
 from pyspark.sql.functions import col, count, when, lit, first, desc, array_contains, avg, dense_rank
-from pyspark.sql.window import Window
+from pyspark.sql import Window
 
 from dataframes import name_df, basics_df, akas_df, ratings_df
 
