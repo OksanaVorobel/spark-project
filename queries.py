@@ -6,7 +6,6 @@ from dataframes import name_df, basics_df, akas_df, ratings_df
 
 """ Oksana Vorobel queries """
 
-
 def get_people_who_starred_in_genres_in_year():
     result = (
         name_df
