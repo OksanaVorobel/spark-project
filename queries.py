@@ -2,7 +2,7 @@ import pyspark.sql.functions as F
 from pyspark.sql.functions import col, count, when, lit, first, desc, array_contains, avg, dense_rank
 from pyspark.sql import Window
 
-from dataframes import name_df, basics_df, akas_df, ratings_df
+from dataframes import name_df, basics_df, akas_df, ratings_df, episode_df
 
 """ Oksana Vorobel queries """
 
@@ -226,3 +226,70 @@ def run_akas_n_rating_queries():
     result_q6.coalesce(1).write.csv("data/top_10_films_by_number_of_votes.csv", header=True, mode="overwrite")
 
 """ end of Ilona Klymenok queries """
+
+
+
+
+""" start of Синюк Олег queries """
+
+
+def run_episodes_queries():
+    # 1. all titles of TV series along with the total number of episodes, ordered by the total number of episodes in descending order
+    result_df = (
+        episode_df
+            .join(basics_df, episode_df.parentTconst == basics_df.tconst)
+            .filter(col('titleType') == 'tvSeries')
+            .groupBy("primaryTitle")
+            .agg(count(episode_df.tconst).alias('total_episodes'))
+            .withColumnRenamed("count(tconst)", "total_episodes")
+            .orderBy(col("total_episodes").desc())
+    )
+    result_df.show()
+    result_df.write.mode("overwrite").csv('data/query1.csv', header=True)
+
+    # 2. the season with the highest number of episodes for each TV series
+    result_df = (
+        episode_df
+            .join(basics_df, episode_df.parentTconst == basics_df.tconst)
+            .filter(col('titleType') == 'tvSeries')
+            .groupBy("parentTconst", "seasonNumber")
+            .agg(
+            F.max("episodeNumber").alias("max_episode"),
+            F.first(episode_df.tconst).alias("tconst")
+        )
+    )
+    result_df.show()
+    result_df.write.mode("overwrite").csv('data/query2.csv', header=True)
+
+    # 3. TV series with the most episodes in each genre.
+    result_df = (
+        episode_df
+            .join(basics_df, episode_df.parentTconst == basics_df.tconst)
+            .filter(col('titleType') == 'tvSeries')
+            .select(F.explode("genres").alias("genre"), "episodeNumber")
+            .groupBy("genre")
+            .agg(
+            F.max("episodeNumber").alias("max_episodes")
+        )
+    )
+    result_df.show()
+    result_df.write.mode("overwrite").csv('data/query3.csv', header=True)
+
+    # 4. List TV series that have at least one episode with a season number greater than 5.
+    result_df = episode_df.filter("seasonNumber > 5").distinct()
+    result_df.show()
+    result_df.write.mode("overwrite").csv('data/query4.csv', header=True)
+
+    # 5. List TV series along with the total number of seasons:
+    result_df = episode_df.groupBy("parentTconst").agg(F.max("seasonNumber").alias("total_seasons"))
+    result_df.show()
+    result_df.write.mode("overwrite").csv('data/query5.csv', header=True)
+
+    # 6. Identify TV series that have only one season:
+    result_df = episode_df.groupBy("parentTconst").agg(F.max("seasonNumber").alias("total_seasons")).filter(
+        "total_seasons = 1")
+    result_df.show()
+    result_df.write.mode("overwrite").csv('data/query6.csv', header=True)
+
+
+""" end of Синюк Олег queries """
